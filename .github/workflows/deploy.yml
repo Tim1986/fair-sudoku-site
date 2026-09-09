@@ -17,6 +17,8 @@ concurrency:
 
 jobs:
   deploy:
+    # Only the public mirror hosts Pages; this self-skips in the private source repo.
+    if: github.repository == 'Tim1986/fair-sudoku-site'
     runs-on: ubuntu-latest
     environment:
       name: github-pages

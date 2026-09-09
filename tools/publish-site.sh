@@ -14,7 +14,7 @@ fi
 rsync -a --delete \
   --exclude ".git" --exclude "docs" --exclude "data" --exclude ".DS_Store" \
   "$SRC/index.html" "$SRC/checker.html" "$SRC/manifest.webmanifest" "$SRC/sw.js" \
-  "$SRC/css" "$SRC/js" "$SRC/icons" "$SRC/tools" "$SRC/.github" "$SRC/.gitignore" \
+  "$SRC/css" "$SRC/js" "$SRC/icons" "$SRC/puzzles" "$SRC/tools" "$SRC/.github" "$SRC/.gitignore" \
   "$DST/"
 
 cat > "$DST/README.md" <<'EOF'

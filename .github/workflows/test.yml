@@ -1,0 +1,19 @@
+name: Tests
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  test:
+    # Tests live in the source repo; the public mirror doesn't ship test/.
+    if: github.repository == 'Tim1986/fair-sudoku'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Run the fairness test suite
+        run: node --test

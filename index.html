@@ -40,12 +40,28 @@
           <button class="btn slim" id="newBtn">Practice puzzle</button>
         </div>
       </div>
+      <div class="diff-row" id="diffRow" hidden>
+        <span class="diff-label">Difficulty</span>
+        <div class="diff-pills" id="diffPills"></div>
+      </div>
       <div class="grid" id="grid" role="grid" aria-label="Sudoku board"></div>
       <div class="pad" id="pad"></div>
       <div class="board-actions">
         <button class="btn amber" id="proveBtn">Prove it</button>
         <button class="btn" id="notesBtn" aria-pressed="false">Notes <span class="key-hint">N</span></button>
         <button class="btn" id="autoNotesBtn">Auto notes</button>
+        <button class="btn slim" id="undoBtn" title="Undo (Ctrl/Cmd+Z)" aria-label="Undo" disabled>↶ Undo</button>
+        <button class="btn slim" id="redoBtn" title="Redo (Ctrl/Cmd+Shift+Z)" aria-label="Redo" disabled>↷ Redo</button>
+      </div>
+
+      <div class="panel proof board-proof" id="proofPanel" hidden>
+        <h2>The proof</h2>
+        <p class="sub">Three stages, spoiling only as much as you ask for. Stage 1 shows <em>where</em>; stage 2 shows the <em>evidence</em>; stage 3 shows the <em>reasoning</em>.</p>
+        <div class="ladder-label" id="stageLabel">No proof requested</div>
+        <div class="stage" id="stage1">The pulsing cell is the next square provable by pure logic. Try it yourself before going further.</div>
+        <div class="stage" id="stage2">The outlined cells are the evidence — the placements that force the conclusion. The tinted region is the house the logic lives in.</div>
+        <div class="stage" id="stage3"></div>
+        <div class="proof-actions" id="proofActions"></div>
       </div>
     </div>
 
@@ -69,16 +85,6 @@
         <div class="zero">Guesses required: 0 · Bifurcations: 0</div>
       </div>
 
-      <div class="panel proof" id="proofPanel">
-        <h2>The proof</h2>
-        <p class="sub">Three stages, spoiling only as much as you ask for. Stage 1 shows <em>where</em>; stage 2 shows the <em>evidence</em>; stage 3 shows the <em>reasoning</em>.</p>
-        <div class="ladder-label" id="stageLabel">No proof requested</div>
-        <div class="stage" id="stage1">The pulsing cell is the next square provable by pure logic. Try it yourself before going further.</div>
-        <div class="stage" id="stage2">The outlined cells are the evidence — the placements that force the conclusion. The tinted region is the house the logic lives in.</div>
-        <div class="stage" id="stage3"></div>
-        <div class="proof-actions" id="proofActions"></div>
-      </div>
-
       <div class="panel qed" id="qedPanel">
         <div class="big">Q.E.D.</div>
         <p id="qedText"></p>
@@ -94,6 +100,7 @@
 </div>
 <script src="js/premium.js"></script>
 <script src="js/engine.js"></script>
+<script src="js/async-engine.js"></script>
 <script src="js/app.js"></script>
 <script>if ("serviceWorker" in navigator) navigator.serviceWorker.register("sw.js");</script>
 </body>

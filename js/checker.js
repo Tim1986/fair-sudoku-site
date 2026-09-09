@@ -31,8 +31,9 @@ function tierRows(v) {
 
 /* ---------- pasted puzzles ---------- */
 const panel = document.getElementById("verdictPanel");
-document.getElementById("checkBtn").addEventListener("click", () => {
+document.getElementById("checkBtn").addEventListener("click", async () => {
   if (!requirePremium("The paste-anything checker")) return;
+  const btn = document.getElementById("checkBtn");
   const raw = document.getElementById("pasteBox").value;
   const p = parsePuzzle(raw);
   panel.hidden = false;
@@ -44,7 +45,10 @@ document.getElementById("checkBtn").addEventListener("click", () => {
     document.getElementById("tierTable").innerHTML = "";
     return;
   }
-  showVerdict(verdict(p));
+  btn.disabled = true; btn.textContent = "Deliberating…";
+  const v = await verdictAsync(p);
+  btn.disabled = false; btn.textContent = "Deliver the verdict";
+  showVerdict(v);
 });
 
 function showVerdict(v) {
@@ -76,10 +80,10 @@ async function loadNYT() {
   document.getElementById("nytSub").textContent =
     `Verdicts for The New York Times’ Sudoku of ${data.displayDate || data.date} — computed by the Fair Sudoku engine, not the NYT.`;
   cardsEl.innerHTML = "";
-  NYT_LEVELS.forEach(lv => {
+  for (const lv of NYT_LEVELS) {
     const p = data.puzzles && data.puzzles[lv];
-    if (!p) return;
-    const v = verdict(p);
+    if (!p) continue;
+    const v = await verdictAsync(p);
     const s = verdictSummary(v);
     const card = document.createElement("button");
     card.className = "nyt-card " + (s.fair ? "good" : "bad");
@@ -90,6 +94,6 @@ async function loadNYT() {
         : "stalls with " + v.stuck.remaining + " cells left"}</div>`;
     card.addEventListener("click", () => showVerdict(v));
     cardsEl.appendChild(card);
-  });
+  }
 }
 loadNYT();

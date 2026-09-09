@@ -28,11 +28,14 @@ const TECHS = [
   { id: "HP", name: "Hidden pair", tier: 2 },
   { id: "PP", name: "Pointing pair", tier: 3 },
   { id: "BL", name: "Box–line reduction", tier: 3 },
+  { id: "XW", name: "X-Wing", tier: 4 },
+  { id: "XY", name: "XY-Wing", tier: 4 },
 ];
 const LEVELS = [
-  { id: 1, label: "Singles only", desc: "naked & hidden singles" },
-  { id: 2, label: "+ Pairs", desc: "adds naked & hidden pairs" },
-  { id: 3, label: "Full toolkit", desc: "adds pointing pairs & box–line" },
+  { id: 1, label: "Singles", desc: "naked & hidden singles" },
+  { id: 2, label: "+ Pairs", desc: "singles plus naked & hidden pairs" },
+  { id: 3, label: "+ Lines", desc: "singles, pairs, and line intersections" },
+  { id: 4, label: "Expert", desc: "singles, pairs, intersections, and wings (X-Wing, XY-Wing)" },
 ];
 
 function initCands(board) {
@@ -137,6 +140,69 @@ function findStep(board, cands, tier) {
           return { kind: "elim", tech: "BL", cells: victims, digits: [d], evidence: spots, unit: UNITS[u],
             why: `In ${UNIT_NAME[u]}, every possible home for ${d} falls inside ${UNIT_NAME[18 + b]}. That box’s ${d} is spoken for, so ${d} can be removed from the box’s other cells.` };
         }
+      }
+    }
+  }
+  if (tier < 4) return null;
+  // X-Wing: for a digit d, two lines whose only d-candidates share the same two
+  // cross-lines lock d into those cross-lines — remove d elsewhere along them.
+  for (const orient of ["row", "col"]) {
+    const lineOf = orient === "row" ? R : C;
+    const crossOf = orient === "row" ? C : R;
+    const lineUnit = k => UNITS[orient === "row" ? k : 9 + k];
+    const crossUnit = k => UNITS[orient === "row" ? 9 + k : k];
+    for (let d = 1; d <= 9; d++) {
+      const rowsByCross = [];
+      for (let k = 0; k < 9; k++) {
+        const spots = lineUnit(k).filter(i => cands[i] && cands[i].has(d));
+        if (spots.length === 2) rowsByCross.push({ k, crosses: spots.map(crossOf).sort((a, b) => a - b) });
+      }
+      for (let a = 0; a < rowsByCross.length; a++) for (let b = a + 1; b < rowsByCross.length; b++) {
+        const A = rowsByCross[a], Bx = rowsByCross[b];
+        if (A.crosses[0] === Bx.crosses[0] && A.crosses[1] === Bx.crosses[1]) {
+          const evidence = [];
+          [A.k, Bx.k].forEach(lk => A.crosses.forEach(ck => {
+            evidence.push(orient === "row" ? lk * 9 + ck : ck * 9 + lk);
+          }));
+          const victims = [];
+          A.crosses.forEach(ck => crossUnit(ck).forEach(i => {
+            if (!evidence.includes(i) && cands[i] && cands[i].has(d)) victims.push(i);
+          }));
+          if (victims.length) {
+            return { kind: "elim", tech: "XW", cells: victims, digits: [d], evidence,
+              unit: evidence.slice(),
+              why: `${d} forms an X-Wing: in two ${orient}s it sits only in the same two ${orient === "row" ? "columns" : "rows"}. Those two ${orient === "row" ? "columns" : "rows"} must use their ${d} inside the rectangle, so ${d} can be removed from them elsewhere.` };
+          }
+        }
+      }
+    }
+  }
+  // XY-Wing: a pivot {X,Y} sees two bivalue cells {X,Z} and {Y,Z}; any cell
+  // seeing both wings cannot be Z.
+  const bivalue = [];
+  for (let i = 0; i < 81; i++) if (cands[i] && cands[i].size === 2) bivalue.push(i);
+  const sees = (i, j) => PEERS[i].includes(j);
+  for (const pivot of bivalue) {
+    const [X, Y] = [...cands[pivot]];
+    const wings = bivalue.filter(w => w !== pivot && sees(pivot, w));
+    for (let a = 0; a < wings.length; a++) for (let b = 0; b < wings.length; b++) {
+      if (a === b) continue;
+      const w1 = wings[a], w2 = wings[b];
+      const c1 = [...cands[w1]], c2 = [...cands[w2]];
+      if (!c1.includes(X) || c2.includes(X)) continue;      // w1 = {X,Z}
+      if (!c2.includes(Y) || c1.includes(Y)) continue;      // w2 = {Y,Z}
+      const Z1 = c1.find(z => z !== X), Z2 = c2.find(z => z !== Y);
+      if (Z1 !== Z2 || Z1 === X || Z1 === Y) continue;
+      const Z = Z1;
+      const victims = [];
+      for (let i = 0; i < 81; i++) {
+        if (i === pivot || i === w1 || i === w2) continue;
+        if (cands[i] && cands[i].has(Z) && sees(i, w1) && sees(i, w2)) victims.push(i);
+      }
+      if (victims.length) {
+        return { kind: "elim", tech: "XY", cells: victims, digits: [Z], evidence: [pivot, w1, w2],
+          unit: [pivot, w1, w2],
+          why: `XY-Wing: pivot ${cellName(pivot)} {${X},${Y}} links wings ${cellName(w1)} {${X},${Z}} and ${cellName(w2)} {${Y},${Z}}. Whichever value the pivot takes, one wing becomes ${Z} — so any cell seeing both wings cannot be ${Z}.` };
       }
     }
   }
@@ -265,6 +331,46 @@ function verdict(puzzle) {
   return { givens, valid: true, tiers, fairTier: fair ? fair.id : null, stuck };
 }
 
+/* Difficulty scoring. A solve trace's cost is the sum of per-technique weights
+   (roughly how much human effort each move demands). The band buckets that
+   score for a human-facing label. Thresholds calibrated from the puzzle bank's
+   score distribution (see tools/build-bank.mjs). */
+const TECH_WEIGHT = { NS: 1, HS: 3, NP: 8, HP: 10, PP: 12, BL: 12, XW: 25, XY: 30 };
+function difficultyScore(steps) {
+  return steps.reduce((s, st) => s + (TECH_WEIGHT[st.tech] || 0), 0);
+}
+// Tier-relative terciles (score cut-points), so "difficulty" means difficulty
+// *within the chosen ceiling* — a hard Singles puzzle and a hard Expert puzzle
+// each read as "Tough" for their level. Calibrated from the bank distribution.
+const DIFFICULTY_CUTS = { 1: [67, 78], 2: [86, 99], 3: [107, 127], 4: [131, 161] };
+function difficultyBand(score, tier) {
+  const [t33, t67] = DIFFICULTY_CUTS[tier] || DIFFICULTY_CUTS[4];
+  return score <= t33 ? "Gentle" : score <= t67 ? "Steady" : "Tough";
+}
+
+/* Brute-force solver returning the first complete solution (or null).
+   Ground truth for tests and verdict cross-checks; never used during play. */
+function fullSolve(startBoard) {
+  const board = startBoard.slice();
+  function go() {
+    let best = -1, bestN = 10, bestBlocked = null;
+    for (let i = 0; i < 81; i++) {
+      if (board[i]) continue;
+      const blocked = new Set();
+      PEERS[i].forEach(p => { if (board[p]) blocked.add(board[p]); });
+      const n = 9 - blocked.size;
+      if (n < bestN) { bestN = n; best = i; bestBlocked = blocked; if (n <= 1) break; }
+    }
+    if (best === -1) return true;
+    for (let d = 1; d <= 9; d++) {
+      if (bestBlocked.has(d)) continue;
+      board[best] = d; if (go()) return true; board[best] = 0;
+    }
+    return false;
+  }
+  return go() ? board : null;
+}
+
 /* Parse a pasted puzzle: keeps digits and blank markers (0 or .), ignores
    everything else. Returns an 81-length array or null. */
 function parsePuzzle(text) {
@@ -291,7 +397,13 @@ function dailyGenerate(tier) {
   return generate(tier, mulberry32(dailyNumber() * 7919 + tier * 104729));
 }
 
-/* Node compatibility for tools/ scripts. */
+/* Node compatibility for tools/ and tests. */
 if (typeof module !== "undefined" && module.exports) {
-  module.exports = { TECHS, LEVELS, solveHuman, generate, verdict, parsePuzzle, countSolutions };
+  module.exports = {
+    TECHS, LEVELS, PEERS, UNITS, cellName,
+    initCands, findStep, applyStep, solveHuman,
+    generate, dailyGenerate, dailyNumber, mulberry32,
+    verdict, parsePuzzle, countSolutions, fullSolve,
+    difficultyScore, difficultyBand,
+  };
 }

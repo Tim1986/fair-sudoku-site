@@ -10,6 +10,7 @@ let notesMode = false;
 let proofsAsked = 0; // proofs built this puzzle (for the share card)
 let selected = -1;
 let proof = null; // {stage, ladder:{elims, place}} | {stage, error:[cells]} | {stage, stuck:true}
+let history = [], future = []; // snapshots of {entries, notes} for undo/redo
 
 const grid = document.getElementById("grid"), pad = document.getElementById("pad");
 const cells = [];
@@ -23,6 +24,11 @@ for (let i = 0; i < 81; i++) {
 }
 grid.tabIndex = 0;
 grid.addEventListener("keydown", e => {
+  if ((e.ctrlKey || e.metaKey) && (e.key === "z" || e.key === "Z")) {
+    if (e.shiftKey) redo(); else undo();
+    e.preventDefault(); return;
+  }
+  if ((e.ctrlKey || e.metaKey) && (e.key === "y" || e.key === "Y")) { redo(); e.preventDefault(); return; }
   if (e.key === "n" || e.key === "N") { toggleNotes(); e.preventDefault(); return; }
   if (selected < 0) { if (e.key.startsWith("Arrow")) { select(0); e.preventDefault(); } return; }
   let i = selected;
@@ -63,10 +69,39 @@ function toggleNotes() {
 }
 document.getElementById("notesBtn").addEventListener("click", toggleNotes);
 document.getElementById("autoNotesBtn").addEventListener("click", () => {
+  pushHistory();
   const cands = initCands(board());
   for (let i = 0; i < 81; i++) if (cands[i]) notes[i] = new Set(cands[i]);
   render(); saveDaily();
 });
+
+/* ---------- undo / redo ---------- */
+function snapshot() { return { entries: entries.slice(), notes: notes.map(s => new Set(s)) }; }
+function restore(snap) { entries = snap.entries.slice(); notes = snap.notes.map(s => new Set(s)); }
+function pushHistory() {
+  history.push(snapshot());
+  if (history.length > 200) history.shift();
+  future = [];
+  updateUndoButtons();
+}
+function updateUndoButtons() {
+  document.getElementById("undoBtn").disabled = history.length === 0;
+  document.getElementById("redoBtn").disabled = future.length === 0;
+}
+function undo() {
+  if (!history.length) return;
+  future.push(snapshot());
+  restore(history.pop());
+  proof = null; render(); checkDone(); saveDaily(); updateUndoButtons();
+}
+function redo() {
+  if (!future.length) return;
+  history.push(snapshot());
+  restore(future.pop());
+  proof = null; render(); checkDone(); saveDaily(); updateUndoButtons();
+}
+document.getElementById("undoBtn").addEventListener("click", undo);
+document.getElementById("redoBtn").addEventListener("click", redo);
 
 function placeEntry(i, d) {
   entries[i] = d; notes[i] = new Set();
@@ -74,6 +109,7 @@ function placeEntry(i, d) {
 }
 function enter(d) {
   if (selected < 0 || givens[selected]) return;
+  pushHistory();
   if (notesMode && d !== 0 && !entries[selected]) {
     if (notes[selected].has(d)) notes[selected].delete(d); else notes[selected].add(d);
   } else if (d === 0) {
@@ -152,11 +188,14 @@ proveBtn.addEventListener("click", () => {
 function renderProof() {
   stages.forEach(s => s.classList.remove("show"));
   proofActions.innerHTML = "";
+  const panelEl = document.getElementById("proofPanel");
   if (!proof) {
     stageLabel.textContent = "No proof requested";
     proveBtn.textContent = "Prove it";
+    panelEl.hidden = true;
     return;
   }
+  panelEl.hidden = false;
   if (proof.error) {
     stageLabel.textContent = "Proof blocked";
     stages[2].classList.add("show"); stages[2].classList.add("err");
@@ -193,7 +232,7 @@ function renderProof() {
     stages[2].innerHTML = html; stages[2].classList.add("show");
     const b = document.createElement("button");
     b.className = "btn primary"; b.textContent = `Place the ${pl.digit} in ${cellName(pl.cell)}`;
-    b.addEventListener("click", () => { placeEntry(pl.cell, pl.digit); proof = null; render(); checkDone(); saveDaily(); });
+    b.addEventListener("click", () => { pushHistory(); placeEntry(pl.cell, pl.digit); proof = null; render(); checkDone(); saveDaily(); });
     proofActions.appendChild(b);
   }
 }
@@ -205,8 +244,9 @@ function renderCert() {
   table.innerHTML = TECHS.filter(t => t.tier <= tier).map(t =>
     `<tr><td>${t.name}</td><td>${counts[t.id] || 0}</td></tr>`).join("");
   const L = LEVELS.find(L => L.id === tier);
+  const band = difficultyBand(difficultyScore(certTrace), tier);
   document.getElementById("certStamp").textContent =
-    `Verified before you saw it: ${certTrace.length} logical steps, ceiling “${L.label}”.`;
+    `Verified before you saw it: ${certTrace.length} logical steps · ceiling “${L.label}” · ${band} for this level.`;
   document.getElementById("contractText").textContent =
     `This puzzle is certified solvable with ${L.desc} — nothing harder. If you’re ever stuck, don’t guess: demand the proof.`;
   const list = document.getElementById("techList");
@@ -272,10 +312,15 @@ function loadDaily() {
     const raw = localStorage.getItem(dailyKey());
     if (!raw) return false;
     const s = JSON.parse(raw);
+    // Validate everything before committing any of it, so a corrupt or
+    // old-format save can never leave the board in a half-loaded state.
     if (!Array.isArray(s.entries) || s.entries.length !== 81) return false;
-    entries = s.entries.map(Number);
-    notes = s.notes.map(a => new Set(a));
-    proofsAsked = s.proofsAsked || 0;
+    if (!Array.isArray(s.notes) || s.notes.length !== 81) return false;
+    const loadedEntries = s.entries.map(v => Number(v) || 0);
+    const loadedNotes = s.notes.map(a => new Set(Array.isArray(a) ? a.map(Number) : []));
+    entries = loadedEntries;
+    notes = loadedNotes;
+    proofsAsked = Number(s.proofsAsked) || 0;
     return true;
   } catch (_) { return false; }
 }
@@ -320,18 +365,79 @@ function renderStats() {
   ].map(([n, l]) => `<div class="stat"><div class="stat-n">${n}</div><div class="stat-l">${l}</div></div>`).join("");
 }
 
-function newPuzzle(nextMode) {
+/* ---------- puzzle bank (practice mode) ---------- */
+let bank = null, bankLoad = null;
+let usedPuzzles = (() => { try { return new Set(JSON.parse(localStorage.getItem("fs-used") || "[]")); } catch (_) { return new Set(); } })();
+let practiceBand = "Any";
+const BANDS = ["Any", "Gentle", "Steady", "Tough"];
+
+function loadBank() {
+  if (bankLoad) return bankLoad;
+  bankLoad = fetch("puzzles/bank.json").then(r => r.ok ? r.json() : null).catch(() => null).then(b => { bank = b; return b; });
+  return bankLoad;
+}
+function saveUsed() {
+  try { localStorage.setItem("fs-used", JSON.stringify([...usedPuzzles].slice(-2000))); } catch (_) {}
+}
+function pickFromBank(t, band) {
+  if (!bank || !bank.tiers || !bank.tiers[t]) return null;
+  let pool = bank.tiers[t];
+  if (band && band !== "Any") pool = pool.filter(p => p.band === band);
+  if (!pool.length) return null;
+  const fresh = pool.filter(p => !usedPuzzles.has(p.p));
+  const choose = fresh.length ? fresh : pool; // recycle once exhausted
+  const pz = choose[Math.floor(Math.random() * choose.length)];
+  usedPuzzles.add(pz.p); saveUsed();
+  return { puzzle: [...pz.p].map(Number), solution: [...pz.s].map(Number) };
+}
+
+const diffPills = document.getElementById("diffPills");
+BANDS.forEach(b => {
+  const el = document.createElement("button");
+  el.className = "diff-pill"; el.textContent = b; el.dataset.band = b;
+  el.addEventListener("click", () => { practiceBand = b; updateDiffPills(); newPuzzle("free"); });
+  diffPills.appendChild(el);
+});
+function updateDiffPills() {
+  diffPills.querySelectorAll("button").forEach(b => b.classList.toggle("on", b.dataset.band === practiceBand));
+}
+function togglePracticeControls() {
+  document.getElementById("diffRow").hidden = (mode !== "free");
+  updateDiffPills();
+}
+
+let genToken = 0; // guards against stale results when ceilings are switched quickly
+async function newPuzzle(nextMode) {
   if (nextMode === "free" && !requirePremium("Unlimited practice puzzles")) return;
   mode = nextMode;
-  const g = mode === "daily" ? dailyGenerate(tier) : generate(tier);
-  puzzle = g.puzzle; solution = g.solution; certTrace = g.trace;
+  document.getElementById("dailyBtn").classList.toggle("on", mode === "daily");
+  togglePracticeControls();
+
+  const myToken = ++genToken;
+  const reqTier = tier;
+  grid.classList.add("loading");
+  let g;
+  if (mode === "daily") {
+    g = await dailyGenerateAsync(reqTier);
+  } else {
+    await loadBank();
+    if (myToken !== genToken) return;
+    g = pickFromBank(reqTier, practiceBand) || await generateAsync(reqTier); // fallback if bank missing
+  }
+  // A newer request superseded this one (user switched ceilings/mode) — drop it.
+  if (myToken !== genToken) return;
+  grid.classList.remove("loading");
+
+  puzzle = g.puzzle; solution = g.solution;
+  // Recompute the trace so the certificate + difficulty work for banked puzzles too.
+  certTrace = solveHuman(puzzle, reqTier).steps;
   givens = puzzle.map(v => !!v);
   entries = new Array(81).fill(0);
   notes = Array.from({ length: 81 }, () => new Set());
   proofsAsked = 0;
   selected = -1; proof = null;
+  history = []; future = []; updateUndoButtons();
   if (mode === "daily") loadDaily();
-  document.getElementById("dailyBtn").classList.toggle("on", mode === "daily");
   renderCert(); render(); checkDone();
 }
 document.getElementById("dailyBtn").addEventListener("click", () => newPuzzle("daily"));
