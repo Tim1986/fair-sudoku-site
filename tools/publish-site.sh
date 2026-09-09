@@ -13,7 +13,8 @@ fi
 
 rsync -a --delete \
   --exclude ".git" --exclude "docs" --exclude "data" --exclude ".DS_Store" \
-  "$SRC/index.html" "$SRC/checker.html" "$SRC/manifest.webmanifest" "$SRC/sw.js" "$SRC/CNAME" \
+  "$SRC/index.html" "$SRC/checker.html" "$SRC/404.html" "$SRC/manifest.webmanifest" "$SRC/sw.js" \
+  "$SRC/CNAME" "$SRC/robots.txt" "$SRC/sitemap.xml" \
   "$SRC/css" "$SRC/js" "$SRC/icons" "$SRC/puzzles" "$SRC/tools" "$SRC/.github" "$SRC/.gitignore" \
   "$DST/"
 

@@ -32,12 +32,13 @@ const TECHS = [
   { id: "XY", name: "XY-Wing", tier: 4 },
   { id: "XYZ", name: "XYZ-Wing", tier: 4 },
   { id: "SF", name: "Swordfish", tier: 4 },
+  { id: "SK", name: "Skyscraper", tier: 4 },
 ];
 const LEVELS = [
   { id: 1, label: "Singles", desc: "naked & hidden singles" },
   { id: 2, label: "+ Pairs", desc: "singles plus naked & hidden pairs" },
   { id: 3, label: "+ Lines", desc: "singles, pairs, and line intersections" },
-  { id: 4, label: "Expert", desc: "singles, pairs, intersections, and advanced patterns (X-Wing, XY-Wing, XYZ-Wing, Swordfish)" },
+  { id: 4, label: "Expert", desc: "singles, pairs, intersections, and advanced patterns (X-Wing, XY-Wing, XYZ-Wing, Swordfish, Skyscraper)" },
 ];
 
 function initCands(board) {
@@ -267,6 +268,39 @@ function findStep(board, cands, tier) {
       }
     }
   }
+  // Skyscraper: two lines each with exactly two candidates for d that share one
+  // cross-line (the base). Since the two base cells share a house, at most one is
+  // d; combined with each line's strong link, at least one of the two far "roof"
+  // cells must be d — so any cell seeing both roofs cannot be d.
+  for (const orient of ["row", "col"]) {
+    const lineUnit = k => UNITS[orient === "row" ? k : 9 + k];
+    const crossOf = orient === "row" ? C : R;
+    for (let d = 1; d <= 9; d++) {
+      const twos = [];
+      for (let k = 0; k < 9; k++) {
+        const spots = lineUnit(k).filter(i => cands[i] && cands[i].has(d));
+        if (spots.length === 2) twos.push(spots);
+      }
+      for (let a = 0; a < twos.length; a++) for (let b = a + 1; b < twos.length; b++) {
+        const A = twos[a], B = twos[b];
+        const Acr = A.map(crossOf), Bcr = B.map(crossOf);
+        const shared = Acr.filter(c => Bcr.includes(c));
+        if (shared.length !== 1) continue; // exactly one shared cross-line = the base
+        const base = shared[0];
+        const roofA = A[Acr[0] === base ? 1 : 0], roofB = B[Bcr[0] === base ? 1 : 0];
+        if (crossOf(roofA) === crossOf(roofB)) continue;
+        const victims = [];
+        for (let i = 0; i < 81; i++) {
+          if (i === roofA || i === roofB) continue;
+          if (cands[i] && cands[i].has(d) && PEERS[i].includes(roofA) && PEERS[i].includes(roofB)) victims.push(i);
+        }
+        if (victims.length) {
+          return { kind: "elim", tech: "SK", cells: victims, digits: [d], evidence: [A[0], A[1], B[0], B[1]], unit: [A[0], A[1], B[0], B[1]],
+            why: `${d} forms a Skyscraper: two ${orient}s hold ${d} in only two cells each and share one ${orient === "row" ? "column" : "row"}. One of the two far cells must be ${d}, so any cell seeing both can’t be ${d}.` };
+        }
+      }
+    }
+  }
   return null;
 }
 
@@ -396,7 +430,7 @@ function verdict(puzzle) {
    (roughly how much human effort each move demands). The band buckets that
    score for a human-facing label. Thresholds calibrated from the puzzle bank's
    score distribution (see tools/build-bank.mjs). */
-const TECH_WEIGHT = { NS: 1, HS: 3, NP: 8, HP: 10, PP: 12, BL: 12, XW: 25, XY: 30, XYZ: 34, SF: 40 };
+const TECH_WEIGHT = { NS: 1, HS: 3, NP: 8, HP: 10, PP: 12, BL: 12, XW: 25, XY: 30, XYZ: 34, SF: 40, SK: 26 };
 function difficultyScore(steps) {
   return steps.reduce((s, st) => s + (TECH_WEIGHT[st.tech] || 0), 0);
 }

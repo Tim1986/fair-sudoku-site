@@ -26,6 +26,7 @@
     <div class="tagline">No bifurcation. No “what if.” No ads — ever. Every puzzle carries a certificate: it is solvable, start to finish, with only the techniques you’ve allowed.</div>
     <div class="header-links">
       <a href="checker.html">The Fairness Checker →</a>
+      <button id="installBtn" class="btn slim install-btn" type="button" hidden>Install app</button>
       <button id="themeToggle" class="theme-toggle" type="button" aria-label="Theme">🖥️</button>
     </div>
   </header>
@@ -139,6 +140,22 @@
 <script src="js/async-engine.js"></script>
 <script src="js/app.js"></script>
 <script src="js/onboarding.js"></script>
-<script>if ("serviceWorker" in navigator) navigator.serviceWorker.register("sw.js");</script>
+<script>
+if ("serviceWorker" in navigator) navigator.serviceWorker.register("sw.js");
+// PWA install affordance (Chrome/Edge/Android). Silently absent elsewhere.
+(function () {
+  var deferred = null, btn = document.getElementById("installBtn");
+  window.addEventListener("beforeinstallprompt", function (e) {
+    e.preventDefault(); deferred = e; if (btn) btn.hidden = false;
+  });
+  if (btn) btn.addEventListener("click", async function () {
+    if (!deferred) return;
+    btn.hidden = true; deferred.prompt();
+    try { await deferred.userChoice; } catch (e) {}
+    deferred = null;
+  });
+  window.addEventListener("appinstalled", function () { if (btn) btn.hidden = true; });
+})();
+</script>
 </body>
 </html>
