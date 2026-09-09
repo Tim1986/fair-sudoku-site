@@ -1,0 +1,100 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Fair Sudoku</title>
+<meta name="description" content="Sudoku with a fairness guarantee: every puzzle certified solvable by pure logic under a technique ceiling you set. No guessing. No ads. Ever.">
+<meta name="theme-color" content="#0E7C66">
+<!-- Social preview. TODO: swap the absolute URL for https://fairsudoku.com once the domain is live. -->
+<meta property="og:title" content="Fair Sudoku">
+<meta property="og:description" content="Sudoku with a fairness guarantee: pure logic, provable on demand. No guessing. No ads. Ever.">
+<meta property="og:type" content="website">
+<meta property="og:image" content="https://tim1986.github.io/fair-sudoku-site/icons/og-image.png">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<link rel="icon" href="icons/icon-192.png" type="image/png">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,400..700;1,6..72,400..700&family=Instrument+Sans:wght@400;500;600&family=Spline+Sans+Mono:wght@400;500;600&display=swap">
+<link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>Fair Sudoku</h1>
+    <div class="tagline">No bifurcation. No “what if.” No ads — ever. Every puzzle carries a certificate: it is solvable, start to finish, with only the techniques you’ve allowed.</div>
+    <div class="header-links"><a href="checker.html">The Fairness Checker →</a></div>
+  </header>
+
+  <div class="contract-banner">
+    <span class="seal">The contract —</span>
+    <span id="contractText">This puzzle is certified solvable using your allowed techniques only. If you’re ever stuck, don’t guess: demand the proof.</span>
+  </div>
+
+  <main>
+    <div class="board-col">
+      <div class="mode-row">
+        <div class="mode-chip" id="modeChip">Daily #1</div>
+        <div class="mode-switch">
+          <button class="btn slim" id="dailyBtn">Today’s daily</button>
+          <button class="btn slim" id="newBtn">Practice puzzle</button>
+        </div>
+      </div>
+      <div class="grid" id="grid" role="grid" aria-label="Sudoku board"></div>
+      <div class="pad" id="pad"></div>
+      <div class="board-actions">
+        <button class="btn amber" id="proveBtn">Prove it</button>
+        <button class="btn" id="notesBtn" aria-pressed="false">Notes <span class="key-hint">N</span></button>
+        <button class="btn" id="autoNotesBtn">Auto notes</button>
+      </div>
+    </div>
+
+    <div class="rail">
+      <div class="panel">
+        <h2>Your logic ceiling</h2>
+        <p class="sub">Set the hardest reasoning you’re willing to do. Puzzles are generated so they never require anything past it.</p>
+        <div class="seg" id="levelSeg"></div>
+        <ul class="techs" id="techList"></ul>
+      </div>
+
+      <div class="panel" id="statsPanel">
+        <h2>Your record</h2>
+        <div class="stats-row" id="statsRow"></div>
+      </div>
+
+      <div class="panel cert" id="certPanel">
+        <h2>Certificate of fairness</h2>
+        <div class="stamp" id="certStamp"></div>
+        <table id="certTable"></table>
+        <div class="zero">Guesses required: 0 · Bifurcations: 0</div>
+      </div>
+
+      <div class="panel proof" id="proofPanel">
+        <h2>The proof</h2>
+        <p class="sub">Three stages, spoiling only as much as you ask for. Stage 1 shows <em>where</em>; stage 2 shows the <em>evidence</em>; stage 3 shows the <em>reasoning</em>.</p>
+        <div class="ladder-label" id="stageLabel">No proof requested</div>
+        <div class="stage" id="stage1">The pulsing cell is the next square provable by pure logic. Try it yourself before going further.</div>
+        <div class="stage" id="stage2">The outlined cells are the evidence — the placements that force the conclusion. The tinted region is the house the logic lives in.</div>
+        <div class="stage" id="stage3"></div>
+        <div class="proof-actions" id="proofActions"></div>
+      </div>
+
+      <div class="panel qed" id="qedPanel">
+        <div class="big">Q.E.D.</div>
+        <p id="qedText"></p>
+        <div class="qed-actions">
+          <button class="btn primary" id="shareBtn">Share result</button>
+          <button class="btn" id="qedNew">Practice puzzle</button>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <footer>Fair Sudoku generates each puzzle against a human-technique solver, not a brute-force one. A puzzle only ships if the solver completes it using nothing beyond your ceiling — the certificate above is the actual trace of that solve, not a marketing claim.</footer>
+</div>
+<script src="js/premium.js"></script>
+<script src="js/engine.js"></script>
+<script src="js/app.js"></script>
+<script>if ("serviceWorker" in navigator) navigator.serviceWorker.register("sw.js");</script>
+</body>
+</html>

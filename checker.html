@@ -1,0 +1,69 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Fairness Checker — Fair Sudoku</title>
+<meta name="description" content="Paste any Sudoku and get a verdict: solvable by humane logic, or requires guessing — and exactly where the logic runs out.">
+<meta name="theme-color" content="#0E7C66">
+<!-- Social preview. TODO: swap the absolute URL for https://fairsudoku.com once the domain is live. -->
+<meta property="og:title" content="The Fairness Checker — Fair Sudoku">
+<meta property="og:description" content="Paste any Sudoku and get a verdict: solvable by humane logic, or requires guessing — and exactly where the logic runs out.">
+<meta property="og:type" content="website">
+<meta property="og:image" content="https://tim1986.github.io/fair-sudoku-site/icons/og-image.png">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<link rel="icon" href="icons/icon-192.png" type="image/png">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,400..700;1,6..72,400..700&family=Instrument+Sans:wght@400;500;600&family=Spline+Sans+Mono:wght@400;500;600&display=swap">
+<link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>The Fairness Checker</h1>
+    <div class="tagline">Put any puzzle on trial. The verdict: solvable by humane logic — or not, and exactly where the logic runs out.</div>
+  </header>
+  <nav class="crumbs"><a href="index.html">← Back to Fair Sudoku</a></nav>
+
+  <main class="checker-main">
+    <div class="col">
+      <div class="panel">
+        <h2>Today’s NYT puzzles <span class="auto-badge">checked automatically</span></h2>
+        <p class="sub" id="nytSub">Verdicts for The New York Times’ daily Sudoku, all three difficulties.</p>
+        <div id="nytCards" class="nyt-cards"></div>
+      </div>
+
+      <div class="panel">
+        <h2>Put any puzzle on trial <span class="premium-badge">Premium · free during beta</span></h2>
+        <p class="sub">Paste a puzzle from a newspaper, book, or another app — 81 characters, using
+        0 or “.” for blanks. Line breaks and punctuation are ignored.</p>
+        <textarea id="pasteBox" rows="5" spellcheck="false" placeholder="e.g. 070180420082040370640002980905004008…"></textarea>
+        <div class="proof-actions">
+          <button class="btn primary" id="checkBtn">Deliver the verdict</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="col">
+      <div class="panel verdict-panel" id="verdictPanel" hidden>
+        <h2>Verdict</h2>
+        <div class="verdict-stamp" id="verdictStamp"></div>
+        <div class="verdict-body" id="verdictBody"></div>
+        <table class="tier-table" id="tierTable"></table>
+      </div>
+    </div>
+  </main>
+
+  <footer>The checker runs the same human-technique engine that certifies Fair Sudoku’s own puzzles:
+  naked/hidden singles, naked/hidden pairs, pointing pairs, and box–line reduction. A puzzle that
+  defeats the full toolkit requires chain logic or bifurcation — the “long goofy counterfactuals”
+  Fair Sudoku exists to abolish. NYT puzzles are fetched by <span class="mono">tools/nyt-check.mjs</span>
+  and © The New York Times; verdicts are ours.</footer>
+</div>
+<script src="js/engine.js"></script>
+<script src="js/premium.js"></script>
+<script src="js/checker.js"></script>
+<script>if ("serviceWorker" in navigator) navigator.serviceWorker.register("sw.js");</script>
+</body>
+</html>
