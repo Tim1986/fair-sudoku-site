@@ -6,6 +6,7 @@
 <title>Fair Sudoku</title>
 <meta name="description" content="Sudoku with a fairness guarantee: every puzzle certified solvable by pure logic under a technique ceiling you set. No guessing. No ads. Ever.">
 <meta name="theme-color" content="#0E7C66">
+<script>try{var t=localStorage.getItem('fs-theme');if(t==='dark'||t==='light')document.documentElement.setAttribute('data-theme',t);}catch(e){}</script>
 <meta property="og:title" content="Fair Sudoku">
 <meta property="og:description" content="Sudoku with a fairness guarantee: pure logic, provable on demand. No guessing. No ads. Ever.">
 <meta property="og:type" content="website">
@@ -23,7 +24,10 @@
   <header>
     <h1>Fair Sudoku</h1>
     <div class="tagline">No bifurcation. No “what if.” No ads — ever. Every puzzle carries a certificate: it is solvable, start to finish, with only the techniques you’ve allowed.</div>
-    <div class="header-links"><a href="checker.html">The Fairness Checker →</a></div>
+    <div class="header-links">
+      <a href="checker.html">The Fairness Checker →</a>
+      <button id="themeToggle" class="theme-toggle" type="button" aria-label="Theme">🖥️</button>
+    </div>
   </header>
 
   <div class="contract-banner">
@@ -98,12 +102,43 @@
     </div>
   </main>
 
-  <footer>Fair Sudoku generates each puzzle against a human-technique solver, not a brute-force one. A puzzle only ships if the solver completes it using nothing beyond your ceiling — the certificate above is the actual trace of that solve, not a marketing claim.</footer>
+  <footer>Fair Sudoku generates each puzzle against a human-technique solver, not a brute-force one. A puzzle only ships if the solver completes it using nothing beyond your ceiling — the certificate above is the actual trace of that solve, not a marketing claim. <button type="button" class="linkish" id="howItWorks">How it works</button></footer>
 </div>
+
+<div class="modal-scrim" id="onboardScrim" hidden>
+  <div class="modal" role="dialog" aria-modal="true" aria-labelledby="obTitle" aria-describedby="obBody">
+    <div class="ob-slide" data-slide="0">
+      <img class="ob-illo" src="icons/onboard-1.png" alt="" onerror="this.remove()">
+      <div class="ob-eyebrow">Welcome to Fair Sudoku</div>
+      <h2 id="obTitle">Fair puzzles, guaranteed</h2>
+      <p id="obBody">Every puzzle here is certified solvable by <strong>pure logic</strong> — no guessing, no dead ends, and no ads. Ever. Before you see a puzzle, our engine has already solved it the humane way; if it couldn’t, it never reaches you.</p>
+    </div>
+    <div class="ob-slide" data-slide="1" hidden>
+      <img class="ob-illo" src="icons/onboard-2.png" alt="" onerror="this.remove()">
+      <div class="ob-eyebrow">When you’re stuck</div>
+      <h2>Don’t guess — prove it</h2>
+      <p>Tap <strong>Prove it</strong> for help in three stages: <em>where</em> the next move is, the <em>evidence</em> that forces it, then the <em>reasoning</em> — the technique, in plain English. You always place the number yourself. It’s a hint that teaches, not a solution that spoils.</p>
+    </div>
+    <div class="ob-slide" data-slide="2" hidden>
+      <img class="ob-illo" src="icons/onboard-3.png" alt="" onerror="this.remove()">
+      <div class="ob-eyebrow">On your terms</div>
+      <h2>Set your logic ceiling</h2>
+      <p>Choose how hard you’re willing to think — from <strong>Singles</strong> up to the full <strong>Expert</strong> toolkit — and pick a difficulty within it. Every puzzle is guaranteed to need nothing beyond your limit.</p>
+    </div>
+    <div class="ob-dots" id="obDots" aria-hidden="true"></div>
+    <div class="ob-actions">
+      <button class="btn" id="obSkip" type="button">Skip</button>
+      <button class="btn primary" id="obNext" type="button">Next</button>
+    </div>
+  </div>
+</div>
+
+<script src="js/theme.js"></script>
 <script src="js/premium.js"></script>
 <script src="js/engine.js"></script>
 <script src="js/async-engine.js"></script>
 <script src="js/app.js"></script>
+<script src="js/onboarding.js"></script>
 <script>if ("serviceWorker" in navigator) navigator.serviceWorker.register("sw.js");</script>
 </body>
 </html>

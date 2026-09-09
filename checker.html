@@ -6,6 +6,7 @@
 <title>Fairness Checker — Fair Sudoku</title>
 <meta name="description" content="Paste any Sudoku and get a verdict: solvable by humane logic, or requires guessing — and exactly where the logic runs out.">
 <meta name="theme-color" content="#0E7C66">
+<script>try{var t=localStorage.getItem('fs-theme');if(t==='dark'||t==='light')document.documentElement.setAttribute('data-theme',t);}catch(e){}</script>
 <meta property="og:title" content="The Fairness Checker — Fair Sudoku">
 <meta property="og:description" content="Paste any Sudoku and get a verdict: solvable by humane logic, or requires guessing — and exactly where the logic runs out.">
 <meta property="og:type" content="website">
@@ -23,6 +24,9 @@
   <header>
     <h1>The Fairness Checker</h1>
     <div class="tagline">Put any puzzle on trial. The verdict: solvable by humane logic — or not, and exactly where the logic runs out.</div>
+    <div class="header-links">
+      <button id="themeToggle" class="theme-toggle" type="button" aria-label="Theme">🖥️</button>
+    </div>
   </header>
   <nav class="crumbs"><a href="index.html">← Back to Fair Sudoku</a></nav>
 
@@ -61,6 +65,7 @@
   Fair Sudoku exists to abolish. NYT puzzles are fetched by <span class="mono">tools/nyt-check.mjs</span>
   and © The New York Times; verdicts are ours.</footer>
 </div>
+<script src="js/theme.js"></script>
 <script src="js/engine.js"></script>
 <script src="js/async-engine.js"></script>
 <script src="js/premium.js"></script>

@@ -313,18 +313,77 @@ function shareText() {
   if (st.current >= 2) lines.push(`🔥 ${st.current}-day streak`);
   return lines.join("\n");
 }
+/* Draw a branded 1080×1080 result card on a canvas. */
+async function makeShareCanvas() {
+  const S = 1080, cv = document.createElement("canvas");
+  cv.width = S; cv.height = S;
+  const g = cv.getContext("2d");
+  const L = LEVELS.find(L => L.id === tier);
+  const st = streaks();
+  const band = difficultyBand(difficultyScore(certTrace), tier);
+  const TEAL = "#0E7C66", DEEP = "#0A4F42", GOLD = "#D9A441", CREAM = "#F5F7F4", SOFT = "#B9D8CE";
+  try { await Promise.all([document.fonts.load("italic 600 84px Newsreader"), document.fonts.load("600 34px 'Instrument Sans'")]); } catch (_) {}
+
+  const grad = g.createLinearGradient(0, 0, 0, S);
+  grad.addColorStop(0, TEAL); grad.addColorStop(1, DEEP);
+  g.fillStyle = grad; g.fillRect(0, 0, S, S);
+
+  g.textAlign = "center"; g.textBaseline = "middle";
+  g.fillStyle = SOFT; g.font = "600 30px 'Instrument Sans', sans-serif";
+  g.save(); g.translate(S / 2, 150);
+  g.fillText("F A I R   S U D O K U", 0, 0); g.restore();
+
+  g.fillStyle = CREAM; g.font = "italic 600 96px Newsreader, serif";
+  g.fillText(`Daily #${dailyNumber()}`, S / 2, 300);
+  g.fillStyle = SOFT; g.font = "400 34px 'Instrument Sans', sans-serif";
+  g.fillText(dailyDateStr(), S / 2, 372);
+
+  // gold check
+  g.strokeStyle = GOLD; g.lineWidth = 26; g.lineCap = "round"; g.lineJoin = "round";
+  g.beginPath(); g.moveTo(S / 2 - 96, 500); g.lineTo(S / 2 - 26, 566); g.lineTo(S / 2 + 104, 452); g.stroke();
+
+  g.fillStyle = CREAM; g.font = "italic 600 64px Newsreader, serif";
+  g.fillText("Solved by pure logic", S / 2, 662);
+
+  g.fillStyle = GOLD; g.font = "600 40px 'Instrument Sans', sans-serif";
+  const proofs = proofsAsked === 0 ? "no proofs asked" : `${proofsAsked} proof${proofsAsked > 1 ? "s" : ""} asked`;
+  g.fillText(`0 guesses  ·  ${proofs}`, S / 2, 748);
+  g.fillStyle = SOFT; g.font = "400 34px 'Instrument Sans', sans-serif";
+  g.fillText(`${L.label} ceiling  ·  ${band} for this level`, S / 2, 806);
+
+  if (st.current >= 2) {
+    g.fillStyle = CREAM; g.font = "600 44px 'Instrument Sans', sans-serif";
+    g.fillText(`🔥 ${st.current}-day streak`, S / 2, 900);
+  }
+
+  g.fillStyle = SOFT; g.font = "600 32px 'Instrument Sans', sans-serif";
+  g.fillText("fairsudoku.com", S / 2, 1000);
+  return cv;
+}
+
+function flashBtn(btn, msg) { btn.textContent = msg; setTimeout(() => { btn.textContent = "Share result"; }, 1800); }
+
 document.getElementById("shareBtn").addEventListener("click", async e => {
   const btn = e.currentTarget, text = shareText();
-  let ok = false;
-  try { await navigator.clipboard.writeText(text); ok = true; } catch (_) {}
-  if (!ok) {
-    const ta = document.createElement("textarea");
-    ta.value = text; document.body.appendChild(ta); ta.select();
-    try { ok = document.execCommand("copy"); } catch (_) {}
-    ta.remove();
+  let blob = null;
+  try { const cv = await makeShareCanvas(); blob = await new Promise(r => cv.toBlob(r, "image/png")); } catch (_) {}
+  // 1) native share sheet with the image (best on mobile)
+  if (blob && navigator.canShare) {
+    const file = new File([blob], "fair-sudoku.png", { type: "image/png" });
+    if (navigator.canShare({ files: [file] })) {
+      try { await navigator.share({ files: [file], text }); return; } catch (err) { if (err && err.name === "AbortError") return; }
+    }
   }
-  btn.textContent = ok ? "Copied!" : "Copy failed";
-  setTimeout(() => { btn.textContent = "Share result"; }, 1600);
+  // 2) copy the image to the clipboard
+  if (blob && navigator.clipboard && window.ClipboardItem) {
+    try { await navigator.clipboard.write([new ClipboardItem({ "image/png": blob })]); flashBtn(btn, "Image copied!"); return; } catch (_) {}
+  }
+  // 3) download the image
+  if (blob) {
+    try { const a = document.createElement("a"); a.href = URL.createObjectURL(blob); a.download = `fair-sudoku-daily-${dailyNumber()}.png`; document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(a.href); flashBtn(btn, "Image saved"); return; } catch (_) {}
+  }
+  // 4) ultimate fallback: copy the text summary
+  try { await navigator.clipboard.writeText(text); flashBtn(btn, "Copied!"); } catch (_) { flashBtn(btn, "Copy failed"); }
 });
 
 /* ---------- daily persistence (per date + tier, per browser) ---------- */
