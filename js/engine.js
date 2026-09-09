@@ -33,12 +33,13 @@ const TECHS = [
   { id: "XYZ", name: "XYZ-Wing", tier: 4 },
   { id: "SF", name: "Swordfish", tier: 4 },
   { id: "SK", name: "Skyscraper", tier: 4 },
+  { id: "WW", name: "W-Wing", tier: 4 },
 ];
 const LEVELS = [
   { id: 1, label: "Singles", desc: "naked & hidden singles" },
   { id: 2, label: "+ Pairs", desc: "singles plus naked & hidden pairs" },
   { id: 3, label: "+ Lines", desc: "singles, pairs, and line intersections" },
-  { id: 4, label: "Expert", desc: "singles, pairs, intersections, and advanced patterns (X-Wing, XY-Wing, XYZ-Wing, Swordfish, Skyscraper)" },
+  { id: 4, label: "Expert", desc: "singles, pairs, intersections, and advanced patterns (X-Wing, XY-Wing, XYZ-Wing, Swordfish, Skyscraper, W-Wing)" },
 ];
 
 function initCands(board) {
@@ -301,6 +302,37 @@ function findStep(board, cands, tier) {
       }
     }
   }
+  // W-Wing: two non-peer bivalue cells with the same pair {X,Y}, joined by a
+  // conjugate pair on Y (one end sees one cell, the other end sees the other).
+  // The strong link forces at least one of the pair to be X, so X is removed
+  // from any cell seeing both.
+  for (let a = 0; a < bivalue.length; a++) for (let b = a + 1; b < bivalue.length; b++) {
+    const A = bivalue[a], B = bivalue[b];
+    if (sees(A, B)) continue;
+    const ca = [...cands[A]], cb = [...cands[B]];
+    if (!(ca.length === 2 && cb.length === 2 && ca.every(x => cb.includes(x)))) continue;
+    let done = false;
+    for (const [X, Y] of [[ca[0], ca[1]], [ca[1], ca[0]]]) {
+      if (done) break;
+      for (let u = 0; u < 27; u++) {
+        const spots = UNITS[u].filter(i => cands[i] && cands[i].has(Y));
+        if (spots.length !== 2) continue;
+        const [L1, L2] = spots;
+        if (L1 === A || L1 === B || L2 === A || L2 === B) continue;
+        const linkOK = (sees(L1, A) && sees(L2, B)) || (sees(L1, B) && sees(L2, A));
+        if (!linkOK) continue;
+        const victims = [];
+        for (let i = 0; i < 81; i++) {
+          if (i === A || i === B) continue;
+          if (cands[i] && cands[i].has(X) && sees(i, A) && sees(i, B)) victims.push(i);
+        }
+        if (victims.length) {
+          return { kind: "elim", tech: "WW", cells: victims, digits: [X], evidence: [A, B, L1, L2], unit: [A, B, L1, L2],
+            why: `W-Wing: ${cellName(A)} and ${cellName(B)} are both {${X},${Y}}, and a ${Y} must sit in one of two linked cells — one seeing each. So at least one of them is ${X}, and any cell seeing both can’t be ${X}.` };
+        }
+      }
+    }
+  }
   return null;
 }
 
@@ -430,7 +462,7 @@ function verdict(puzzle) {
    (roughly how much human effort each move demands). The band buckets that
    score for a human-facing label. Thresholds calibrated from the puzzle bank's
    score distribution (see tools/build-bank.mjs). */
-const TECH_WEIGHT = { NS: 1, HS: 3, NP: 8, HP: 10, PP: 12, BL: 12, XW: 25, XY: 30, XYZ: 34, SF: 40, SK: 26 };
+const TECH_WEIGHT = { NS: 1, HS: 3, NP: 8, HP: 10, PP: 12, BL: 12, XW: 25, XY: 30, XYZ: 34, SF: 40, SK: 26, WW: 30 };
 function difficultyScore(steps) {
   return steps.reduce((s, st) => s + (TECH_WEIGHT[st.tech] || 0), 0);
 }

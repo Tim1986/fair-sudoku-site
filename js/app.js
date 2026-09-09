@@ -253,6 +253,7 @@ function renderProof() {
   }
   if (proof.stage >= 3) {
     const t = TECHS.find(t => t.id === pl.tech);
+    learnTech(pl.tech); elims.forEach(st => learnTech(st.tech));
     let html = `<div class="tech-name">${t.name}</div><div>${pl.why}</div>`;
     if (elims.length) {
       html += `<div style="margin-top:8px; color:var(--muted); font-size:.82rem;">First, ${elims.length} supporting elimination${elims.length > 1 ? "s" : ""}: ` +
@@ -414,6 +415,25 @@ function loadDaily() {
   } catch (_) { return false; }
 }
 
+/* ---------- techniques learned ---------- */
+let techsLearned = (() => { try { return new Set(JSON.parse(localStorage.getItem("fs-techs") || "[]")); } catch (_) { return new Set(); } })();
+function learnTech(id) {
+  if (!id || techsLearned.has(id)) return;
+  techsLearned.add(id);
+  try { localStorage.setItem("fs-techs", JSON.stringify([...techsLearned])); } catch (_) {}
+  const t = TECHS.find(x => x.id === id);
+  if (t) announce(`New technique learned: ${t.name}.`);
+  renderTechMet();
+}
+function renderTechMet() {
+  const el = document.getElementById("techMet");
+  if (!el) return;
+  const n = TECHS.filter(t => techsLearned.has(t.id)).length;
+  const newest = [...techsLearned].map(id => TECHS.find(t => t.id === id)).filter(Boolean).slice(-1)[0];
+  el.innerHTML = `<span class="tm-count">${n} of ${TECHS.length}</span> techniques met` +
+    (newest ? ` · latest: <strong>${newest.name}</strong>` : "");
+}
+
 /* ---------- stats & streaks ---------- */
 function loadStats() {
   try { return JSON.parse(localStorage.getItem("fs-stats")) || { results: {} }; }
@@ -536,6 +556,7 @@ document.getElementById("dailyBtn").addEventListener("click", () => newPuzzle("d
 document.getElementById("newBtn").addEventListener("click", () => newPuzzle("free"));
 document.getElementById("qedNew").addEventListener("click", () => newPuzzle("free"));
 renderStats();
+renderTechMet();
 // Reflect the saved auto-candidate preference on the controls (newPuzzle renders the board).
 (() => {
   const b = document.getElementById("autoCandBtn");

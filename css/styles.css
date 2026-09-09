@@ -160,6 +160,9 @@ footer{margin-top:34px; color:var(--muted); font-size:.8rem; max-width:70ch; lin
 .stat{background:var(--surface2); border-radius:8px; padding:10px 4px; text-align:center;}
 .stat-n{font-family:"Spline Sans Mono",monospace; font-variant-numeric:tabular-nums; font-size:1.3rem; font-weight:600; color:var(--accent-ink);}
 .stat-l{font-size:.68rem; text-transform:uppercase; letter-spacing:.06em; color:var(--muted); margin-top:2px;}
+.tech-met{margin-top:12px; padding-top:12px; border-top:1px dashed var(--line); font-size:.82rem; color:var(--muted);}
+.tech-met .tm-count{font-family:"Spline Sans Mono",monospace; font-variant-numeric:tabular-nums; color:var(--accent-ink); font-weight:600;}
+.tech-met strong{color:var(--ink); font-weight:600;}
 
 /* touch ergonomics */
 .btn, .pad button, .seg button, .cell, .nyt-card{touch-action:manipulation; -webkit-tap-highlight-color:transparent;}
