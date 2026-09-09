@@ -58,6 +58,8 @@ LEVELS.forEach(L => {
   seg.appendChild(b);
 });
 
+function announce(msg) { const el = document.getElementById("srStatus"); if (el) el.textContent = msg; }
+
 function board() { const b = puzzle.slice(); for (let i = 0; i < 81; i++) if (entries[i]) b[i] = entries[i]; return b; }
 function select(i) { selected = i; render(); cells[i].focus({ preventScroll: true }); }
 
@@ -68,12 +70,23 @@ function toggleNotes() {
   b.setAttribute("aria-pressed", String(notesMode));
 }
 document.getElementById("notesBtn").addEventListener("click", toggleNotes);
-document.getElementById("autoNotesBtn").addEventListener("click", () => {
-  pushHistory();
-  const cands = initCands(board());
-  for (let i = 0; i < 81; i++) if (cands[i]) notes[i] = new Set(cands[i]);
-  render(); saveDaily();
-});
+
+/* Auto-candidate mode: pencil marks are derived from the board and kept live
+   as you place/erase, so no manual bookkeeping. Your manual notes are preserved
+   (hidden while auto is on) and return when you switch it off. */
+let autoCandidates = (() => { try { return localStorage.getItem("fs-autocand") === "1"; } catch (_) { return false; } })();
+function setAutoCandidates(on) {
+  autoCandidates = on;
+  try { localStorage.setItem("fs-autocand", on ? "1" : "0"); } catch (_) {}
+  const b = document.getElementById("autoCandBtn");
+  b.classList.toggle("on", on);
+  b.setAttribute("aria-pressed", String(on));
+  const nb = document.getElementById("notesBtn");
+  nb.disabled = on; // manual notes are derived while auto is on
+  if (on && notesMode) toggleNotes();
+  render();
+}
+document.getElementById("autoCandBtn").addEventListener("click", () => setAutoCandidates(!autoCandidates));
 
 /* ---------- undo / redo ---------- */
 function snapshot() { return { entries: entries.slice(), notes: notes.map(s => new Set(s)) }; }
@@ -136,22 +149,28 @@ function conflicts(bd) {
 
 function render() {
   const bd = board(), bad = conflicts(bd);
+  const autoCands = autoCandidates ? initCands(bd) : null;
   const selVal = selected >= 0 ? bd[selected] : 0;
   const counts = {}; for (let d = 1; d <= 9; d++) counts[d] = 0;
   bd.forEach(v => { if (v) counts[v]++; });
   for (let d = 1; d <= 9; d++) {
     const el = document.getElementById("rem" + d);
-    el.textContent = (9 - counts[d]); el.parentElement.classList.toggle("done", counts[d] >= 9);
+    const remaining = 9 - counts[d];
+    el.textContent = remaining; el.parentElement.classList.toggle("done", counts[d] >= 9);
+    el.parentElement.setAttribute("aria-label", `Enter ${d}, ${remaining} remaining`);
   }
   for (let i = 0; i < 81; i++) {
     const el = cells[i]; const v = bd[i];
+    el.setAttribute("aria-label",
+      `Row ${R(i) + 1}, column ${C(i) + 1}: ${v ? v + (givens[i] ? ", given" : "") : "empty"}`);
     el.className = "cell" + (C(i) === 2 || C(i) === 5 ? " br3" : "") + (R(i) === 2 || R(i) === 5 ? " bb3" : "");
+    const marks = autoCands ? (autoCands[i] || null) : (notes[i].size ? notes[i] : null);
     if (v) {
       el.textContent = v;
       if (givens[i]) el.classList.add("given"); else el.classList.add("entry");
-    } else if (notes[i].size) {
+    } else if (marks) {
       el.innerHTML = `<div class="marks">` +
-        Array.from({ length: 9 }, (_, k) => `<span>${notes[i].has(k + 1) ? k + 1 : ""}</span>`).join("") + `</div>`;
+        Array.from({ length: 9 }, (_, k) => `<span>${marks.has(k + 1) ? k + 1 : ""}</span>`).join("") + `</div>`;
     } else {
       el.textContent = "";
     }
@@ -183,7 +202,17 @@ proveBtn.addEventListener("click", () => {
   if (!proof) { proof = buildProof(); if (proof.ladder) { proofsAsked++; saveDaily(); } }
   else if (proof.stage < 3 && !proof.error && !proof.stuck) proof.stage++;
   render();
+  announceProof();
 });
+function announceProof() {
+  if (!proof) return;
+  if (proof.error) { announce(`Proof blocked: ${proof.error.map(cellName).join(", ")} contradict the solution. Clear them and ask again.`); return; }
+  if (proof.stuck) { announce("No further placements are needed."); return; }
+  const pl = proof.ladder.place;
+  if (proof.stage === 1) announce(`Proof stage 1 of 3: the next provable cell is row ${R(pl.cell) + 1}, column ${C(pl.cell) + 1}.`);
+  else if (proof.stage === 2) announce("Proof stage 2 of 3: the evidence cells are highlighted.");
+  else announce(`Proof stage 3 of 3. ${pl.why}`);
+}
 
 function renderProof() {
   stages.forEach(s => s.classList.remove("show"));
@@ -267,6 +296,7 @@ function checkDone() {
       `Solved with pure logic — ${proofsAsked === 0 ? "no proofs needed" : proofsAsked + " proof" + (proofsAsked > 1 ? "s" : "") + " asked"}, 0 guesses.`;
     document.getElementById("shareBtn").hidden = (mode !== "daily");
     recordDailyResult();
+    announce("Solved with pure logic. Not a single guess.");
   }
   return done;
 }
@@ -439,9 +469,19 @@ async function newPuzzle(nextMode) {
   history = []; future = []; updateUndoButtons();
   if (mode === "daily") loadDaily();
   renderCert(); render(); checkDone();
+  const L = LEVELS.find(l => l.id === reqTier);
+  const band = difficultyBand(difficultyScore(certTrace), reqTier);
+  announce(`${mode === "daily" ? "Daily puzzle" : "Practice puzzle"} loaded. ${L.label} ceiling, ${band} for this level.`);
 }
 document.getElementById("dailyBtn").addEventListener("click", () => newPuzzle("daily"));
 document.getElementById("newBtn").addEventListener("click", () => newPuzzle("free"));
 document.getElementById("qedNew").addEventListener("click", () => newPuzzle("free"));
 renderStats();
+// Reflect the saved auto-candidate preference on the controls (newPuzzle renders the board).
+(() => {
+  const b = document.getElementById("autoCandBtn");
+  b.classList.toggle("on", autoCandidates);
+  b.setAttribute("aria-pressed", String(autoCandidates));
+  document.getElementById("notesBtn").disabled = autoCandidates;
+})();
 newPuzzle("daily");

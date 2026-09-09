@@ -31,6 +31,8 @@
     <span id="contractText">This puzzle is certified solvable using your allowed techniques only. If you’re ever stuck, don’t guess: demand the proof.</span>
   </div>
 
+  <div id="srStatus" class="sr-only" role="status" aria-live="polite"></div>
+
   <main>
     <div class="board-col">
       <div class="mode-row">
@@ -49,7 +51,7 @@
       <div class="board-actions">
         <button class="btn amber" id="proveBtn">Prove it</button>
         <button class="btn" id="notesBtn" aria-pressed="false">Notes <span class="key-hint">N</span></button>
-        <button class="btn" id="autoNotesBtn">Auto notes</button>
+        <button class="btn" id="autoCandBtn" aria-pressed="false" title="Auto-candidate mode: pencil marks fill and update automatically">Auto marks</button>
         <button class="btn slim" id="undoBtn" title="Undo (Ctrl/Cmd+Z)" aria-label="Undo" disabled>↶ Undo</button>
         <button class="btn slim" id="redoBtn" title="Redo (Ctrl/Cmd+Shift+Z)" aria-label="Redo" disabled>↷ Redo</button>
       </div>
