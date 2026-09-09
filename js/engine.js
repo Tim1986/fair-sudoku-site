@@ -30,12 +30,14 @@ const TECHS = [
   { id: "BL", name: "Box–line reduction", tier: 3 },
   { id: "XW", name: "X-Wing", tier: 4 },
   { id: "XY", name: "XY-Wing", tier: 4 },
+  { id: "XYZ", name: "XYZ-Wing", tier: 4 },
+  { id: "SF", name: "Swordfish", tier: 4 },
 ];
 const LEVELS = [
   { id: 1, label: "Singles", desc: "naked & hidden singles" },
   { id: 2, label: "+ Pairs", desc: "singles plus naked & hidden pairs" },
   { id: 3, label: "+ Lines", desc: "singles, pairs, and line intersections" },
-  { id: 4, label: "Expert", desc: "singles, pairs, intersections, and wings (X-Wing, XY-Wing)" },
+  { id: 4, label: "Expert", desc: "singles, pairs, intersections, and advanced patterns (X-Wing, XY-Wing, XYZ-Wing, Swordfish)" },
 ];
 
 function initCands(board) {
@@ -206,6 +208,65 @@ function findStep(board, cands, tier) {
       }
     }
   }
+  // XYZ-Wing: a trivalue pivot {X,Y,Z} with two bivalue wings {X,Z} and {Y,Z}
+  // it can see; a cell seeing the pivot AND both wings cannot be Z.
+  const trivalue = [];
+  for (let i = 0; i < 81; i++) if (cands[i] && cands[i].size === 3) trivalue.push(i);
+  for (const pivot of trivalue) {
+    const pc = [...cands[pivot]];
+    const wingCells = bivalue.filter(w => sees(pivot, w) && [...cands[w]].every(x => pc.includes(x)));
+    for (let a = 0; a < wingCells.length; a++) for (let b = a + 1; b < wingCells.length; b++) {
+      const w1 = wingCells[a], w2 = wingCells[b];
+      const c1 = [...cands[w1]], c2 = [...cands[w2]];
+      if (new Set([...c1, ...c2]).size !== 3) continue;  // wings must span the pivot's three
+      const common = c1.filter(x => c2.includes(x));
+      if (common.length !== 1) continue;
+      const Z = common[0];
+      const victims = [];
+      for (let i = 0; i < 81; i++) {
+        if (i === pivot || i === w1 || i === w2) continue;
+        if (cands[i] && cands[i].has(Z) && sees(i, pivot) && sees(i, w1) && sees(i, w2)) victims.push(i);
+      }
+      if (victims.length) {
+        return { kind: "elim", tech: "XYZ", cells: victims, digits: [Z], evidence: [pivot, w1, w2],
+          unit: [pivot, w1, w2],
+          why: `XYZ-Wing: pivot ${cellName(pivot)} {${pc.join(",")}} with wings ${cellName(w1)} and ${cellName(w2)}, both able to be ${Z}. One of the three must be ${Z}, so a cell seeing all three cannot be ${Z}.` };
+      }
+    }
+  }
+  // Swordfish: the three-line generalization of X-Wing. Three lines whose
+  // candidates for d are confined to the same three cross-lines lock d into the
+  // rectangle grid, so d is removed from those cross-lines elsewhere.
+  for (const orient of ["row", "col"]) {
+    const lineUnit = k => UNITS[orient === "row" ? k : 9 + k];
+    const crossUnit = k => UNITS[orient === "row" ? 9 + k : k];
+    const crossOf = orient === "row" ? C : R;
+    const lineOf = orient === "row" ? R : C;
+    const mk = (lk, ck) => orient === "row" ? lk * 9 + ck : ck * 9 + lk;
+    for (let d = 1; d <= 9; d++) {
+      const lines = [];
+      for (let k = 0; k < 9; k++) {
+        const spots = lineUnit(k).filter(i => cands[i] && cands[i].has(d));
+        if (spots.length >= 2 && spots.length <= 3) lines.push({ k, crosses: spots.map(crossOf) });
+      }
+      for (let a = 0; a < lines.length; a++) for (let b = a + 1; b < lines.length; b++) for (let c = b + 1; c < lines.length; c++) {
+        const union = new Set([...lines[a].crosses, ...lines[b].crosses, ...lines[c].crosses]);
+        if (union.size !== 3) continue;
+        const baseLines = [lines[a].k, lines[b].k, lines[c].k];
+        const cols = [...union];
+        const victims = [];
+        cols.forEach(ck => crossUnit(ck).forEach(i => {
+          if (!baseLines.includes(lineOf(i)) && cands[i] && cands[i].has(d)) victims.push(i);
+        }));
+        if (victims.length) {
+          const evidence = [];
+          baseLines.forEach(lk => cols.forEach(ck => { const i = mk(lk, ck); if (cands[i] && cands[i].has(d)) evidence.push(i); }));
+          return { kind: "elim", tech: "SF", cells: victims, digits: [d], evidence, unit: evidence.slice(),
+            why: `${d} forms a Swordfish: across three ${orient}s it is confined to the same three ${orient === "row" ? "columns" : "rows"}. Those ${orient === "row" ? "columns" : "rows"} must place their ${d} inside the pattern, so ${d} can be removed from them elsewhere.` };
+        }
+      }
+    }
+  }
   return null;
 }
 
@@ -335,14 +396,14 @@ function verdict(puzzle) {
    (roughly how much human effort each move demands). The band buckets that
    score for a human-facing label. Thresholds calibrated from the puzzle bank's
    score distribution (see tools/build-bank.mjs). */
-const TECH_WEIGHT = { NS: 1, HS: 3, NP: 8, HP: 10, PP: 12, BL: 12, XW: 25, XY: 30 };
+const TECH_WEIGHT = { NS: 1, HS: 3, NP: 8, HP: 10, PP: 12, BL: 12, XW: 25, XY: 30, XYZ: 34, SF: 40 };
 function difficultyScore(steps) {
   return steps.reduce((s, st) => s + (TECH_WEIGHT[st.tech] || 0), 0);
 }
 // Tier-relative terciles (score cut-points), so "difficulty" means difficulty
 // *within the chosen ceiling* — a hard Singles puzzle and a hard Expert puzzle
 // each read as "Tough" for their level. Calibrated from the bank distribution.
-const DIFFICULTY_CUTS = { 1: [67, 78], 2: [86, 99], 3: [107, 127], 4: [131, 161] };
+const DIFFICULTY_CUTS = { 1: [67, 78], 2: [86, 99], 3: [107, 127], 4: [131, 165] };
 function difficultyBand(score, tier) {
   const [t33, t67] = DIFFICULTY_CUTS[tier] || DIFFICULTY_CUTS[4];
   return score <= t33 ? "Gentle" : score <= t67 ? "Steady" : "Tough";

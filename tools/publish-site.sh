@@ -13,14 +13,14 @@ fi
 
 rsync -a --delete \
   --exclude ".git" --exclude "docs" --exclude "data" --exclude ".DS_Store" \
-  "$SRC/index.html" "$SRC/checker.html" "$SRC/manifest.webmanifest" "$SRC/sw.js" \
+  "$SRC/index.html" "$SRC/checker.html" "$SRC/manifest.webmanifest" "$SRC/sw.js" "$SRC/CNAME" \
   "$SRC/css" "$SRC/js" "$SRC/icons" "$SRC/puzzles" "$SRC/tools" "$SRC/.github" "$SRC/.gitignore" \
   "$DST/"
 
 cat > "$DST/README.md" <<'EOF'
 # Fair Sudoku — deploy mirror
 
-Public deploy repo for [Fair Sudoku](https://tim1986.github.io/fair-sudoku-site/).
+Public deploy repo for [Fair Sudoku](https://fairsudoku.com/).
 Fair puzzles. No guessing. No ads. Ever.
 
 Source of truth lives in a private repo; this mirror is updated by `tools/publish-site.sh`.
