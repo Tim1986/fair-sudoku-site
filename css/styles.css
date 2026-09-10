@@ -106,16 +106,25 @@ main{display:grid; grid-template-columns:minmax(0,1fr) 340px; gap:28px; align-it
 .seg button{flex:1; padding:9px 4px; font-size:.82rem; font-weight:600; background:var(--surface); color:var(--muted); border:none; cursor:pointer; font-family:inherit;}
 .seg button.on{background:var(--accent); color:var(--bg);}
 .seg button+button{border-left:1px solid var(--line)}
-.techs{margin:12px 0 0; padding:0; list-style:none; font-size:.83rem; color:var(--muted); display:flex; flex-direction:column; gap:4px;}
-.techs li::before{content:"✓ "; color:var(--accent); font-weight:700;}
+.more-details{margin-top:12px;}
+.more-details summary{cursor:pointer; font-size:.8rem; font-weight:600; color:var(--accent-ink); list-style-position:inside;}
+.more-details summary:hover{text-decoration:underline;}
+.more-details summary:focus-visible{outline:2px solid var(--focus); outline-offset:2px;}
+.more-details[open] summary{margin-bottom:8px;}
+.tt-name{color:var(--ink); font-weight:600;}
+.tt-plain{display:block; font-size:.78rem; color:var(--muted); line-height:1.4;}
+.techs{margin:0; padding:0; list-style:none; font-size:.83rem; color:var(--muted); display:flex; flex-direction:column; gap:8px;}
+.techs li{padding-left:1.3em; position:relative;}
+.techs li::before{content:"✓"; color:var(--accent); font-weight:700; position:absolute; left:0; top:0;}
 .techs li.off{opacity:.42}
-.techs li.off::before{content:"✗ "; color:var(--muted);}
+.techs li.off::before{content:"✗"; color:var(--muted);}
 
 .cert{border-left:3px solid var(--accent);}
 .cert .stamp{font-family:"Newsreader",serif; font-style:italic; color:var(--accent-ink); font-size:.9rem; margin-bottom:10px;}
 .cert table{width:100%; border-collapse:collapse; font-size:.85rem;}
-.cert td{padding:3px 0; color:var(--muted);}
-.cert td:last-child{text-align:right; font-family:"Spline Sans Mono",monospace; font-variant-numeric:tabular-nums; color:var(--ink);}
+.cert td{padding:5px 0; color:var(--muted); vertical-align:top;}
+.cert td:last-child{text-align:right; font-family:"Spline Sans Mono",monospace; font-variant-numeric:tabular-nums; color:var(--ink); white-space:nowrap; padding-left:10px;}
+.cert tr+tr td{border-top:1px dashed var(--line);}
 .cert .zero{margin-top:10px; padding-top:10px; border-top:1px dashed var(--line); font-size:.85rem; color:var(--accent-ink); font-weight:600;}
 
 .board-proof{max-width:560px; width:100%; margin:0 auto;}

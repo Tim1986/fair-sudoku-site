@@ -1,7 +1,7 @@
 "use strict";
 /* Fair Sudoku service worker: cache-first for the app shell,
    network-first for the NYT feed (it changes daily). */
-const CACHE = "fair-sudoku-v10";
+const CACHE = "fair-sudoku-v11";
 const SHELL = [
   "./", "./index.html", "./checker.html", "./css/styles.css",
   "./js/engine.js", "./js/async-engine.js", "./js/worker.js",

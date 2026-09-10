@@ -21,25 +21,30 @@ const PEERS = Array.from({ length: 81 }, (_, i) => {
 });
 const cellName = i => "R" + (R(i) + 1) + "C" + (C(i) + 1);
 
+/* `name` is the traditional technique name (used in the proof's teaching layer);
+   `plain` is the jargon-free one-liner shown wherever a casual player might meet it. */
 const TECHS = [
-  { id: "NS", name: "Naked single", tier: 1 },
-  { id: "HS", name: "Hidden single", tier: 1 },
-  { id: "NP", name: "Naked pair", tier: 2 },
-  { id: "HP", name: "Hidden pair", tier: 2 },
-  { id: "PP", name: "Pointing pair", tier: 3 },
-  { id: "BL", name: "Box–line reduction", tier: 3 },
-  { id: "XW", name: "X-Wing", tier: 4 },
-  { id: "XY", name: "XY-Wing", tier: 4 },
-  { id: "XYZ", name: "XYZ-Wing", tier: 4 },
-  { id: "SF", name: "Swordfish", tier: 4 },
-  { id: "SK", name: "Skyscraper", tier: 4 },
-  { id: "WW", name: "W-Wing", tier: 4 },
+  { id: "NS", name: "Naked single", tier: 1, plain: "Only one number can fit in a square." },
+  { id: "HS", name: "Hidden single", tier: 1, plain: "A number has only one place it can go in a row, column, or box." },
+  { id: "NP", name: "Naked pair", tier: 2, plain: "Two squares can only hold the same two numbers, so their neighbors can’t." },
+  { id: "HP", name: "Hidden pair", tier: 2, plain: "Two numbers only fit in the same two squares, so those squares hold nothing else." },
+  { id: "PP", name: "Pointing pair", tier: 3, plain: "A box’s only spots for a number line up, ruling it out along that line." },
+  { id: "BL", name: "Box–line reduction", tier: 3, plain: "A line’s only spots for a number sit in one box, ruling out the rest of that box." },
+  { id: "XW", name: "X-Wing", tier: 4, plain: "Four squares in a rectangle pin a number down to two lines." },
+  { id: "XY", name: "XY-Wing", tier: 4, plain: "Three linked two-option squares squeeze a number out of everything they all see." },
+  { id: "XYZ", name: "XYZ-Wing", tier: 4, plain: "A three-option square and two partners squeeze out a shared number." },
+  { id: "SF", name: "Swordfish", tier: 4, plain: "The rectangle idea, stretched across three rows and columns." },
+  { id: "SK", name: "Skyscraper", tier: 4, plain: "Two lines share one spot for a number, so one of the two far ends must take it." },
+  { id: "WW", name: "W-Wing", tier: 4, plain: "Two matching two-option squares, linked so one of them is forced." },
 ];
+/* `label` is the player-facing level name (plain); `plain` describes the level's
+   logic in everyday words; `desc` keeps the technical composition for the
+   optional details layer and the checker. */
 const LEVELS = [
-  { id: 1, label: "Singles", desc: "naked & hidden singles" },
-  { id: 2, label: "+ Pairs", desc: "singles plus naked & hidden pairs" },
-  { id: 3, label: "+ Lines", desc: "singles, pairs, and line intersections" },
-  { id: 4, label: "Expert", desc: "singles, pairs, intersections, and advanced patterns (X-Wing, XY-Wing, XYZ-Wing, Swordfish, Skyscraper, W-Wing)" },
+  { id: 1, label: "Beginner", desc: "naked & hidden singles", plain: "the simplest step-by-step logic" },
+  { id: 2, label: "Casual", desc: "singles plus naked & hidden pairs", plain: "everyday step-by-step logic" },
+  { id: 3, label: "Skilled", desc: "singles, pairs, and line intersections", plain: "sharper step-by-step logic" },
+  { id: 4, label: "Expert", desc: "singles, pairs, intersections, and advanced patterns (X-Wing, XY-Wing, XYZ-Wing, Swordfish, Skyscraper, W-Wing)", plain: "the deepest logic that still never guesses" },
 ];
 
 function initCands(board) {

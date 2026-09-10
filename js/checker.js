@@ -7,8 +7,8 @@ function verdictSummary(v) {
     const L = LEVELS.find(l => l.id === v.fairTier);
     return {
       fair: true,
-      head: `FAIR — solvable with ${L.label.toLowerCase().replace("+ ", "")}`,
-      detail: `${v.givens} givens. Pure logic all the way down: every cell is reachable with techniques at the “${L.label}” ceiling. No guessing required.`,
+      head: `FAIR — solvable at the ${L.label} level`,
+      detail: `${v.givens} givens. Pure step-by-step logic all the way down (${L.desc}). No guessing required.`,
     };
   }
   return {
@@ -90,7 +90,7 @@ async function loadNYT() {
     card.innerHTML = `<div class="nyt-tier">${lv}</div>
       <div class="nyt-verdict">${s.fair ? "FAIR" : "UNFAIR"}</div>
       <div class="nyt-detail">${s.fair
-        ? "ceiling: " + LEVELS.find(l => l.id === v.fairTier).label.toLowerCase()
+        ? LEVELS.find(l => l.id === v.fairTier).label + " level"
         : "stalls with " + v.stuck.remaining + " cells left"}</div>`;
     card.addEventListener("click", () => showVerdict(v));
     cardsEl.appendChild(card);

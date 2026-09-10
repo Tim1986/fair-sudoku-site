@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Fair Sudoku</title>
-<meta name="description" content="Sudoku with a fairness guarantee: every puzzle certified solvable by pure logic under a technique ceiling you set. No guessing. No ads. Ever.">
+<meta name="description" content="Sudoku that never makes you guess. Every puzzle is certified solvable by pure step-by-step logic at your level. No ads. Ever.">
 <meta name="theme-color" content="#0E7C66">
 <script>try{var t=localStorage.getItem('fs-theme');if(t==='dark'||t==='light')document.documentElement.setAttribute('data-theme',t);}catch(e){}</script>
 <meta property="og:title" content="Fair Sudoku">
@@ -23,7 +23,7 @@
 <div class="wrap">
   <header>
     <h1>Fair Sudoku</h1>
-    <div class="tagline">No bifurcation. No “what if.” No ads — ever. Every puzzle carries a certificate: it is solvable, start to finish, with only the techniques you’ve allowed.</div>
+    <div class="tagline">Sudoku that never makes you guess. And no ads — ever.</div>
     <div class="header-links">
       <a href="checker.html">The Fairness Checker →</a>
       <button id="installBtn" class="btn slim install-btn" type="button" hidden>Install app</button>
@@ -74,10 +74,13 @@
 
     <div class="rail">
       <div class="panel">
-        <h2>Your logic ceiling</h2>
-        <p class="sub">Set the hardest reasoning you’re willing to do. Puzzles are generated so they never require anything past it.</p>
+        <h2>Your level</h2>
+        <p class="sub">Every puzzle is guaranteed solvable at your level — it will never need anything deeper.</p>
         <div class="seg" id="levelSeg"></div>
-        <ul class="techs" id="techList"></ul>
+        <details class="more-details">
+          <summary>What logic does each level use?</summary>
+          <ul class="techs" id="techList"></ul>
+        </details>
       </div>
 
       <div class="panel" id="statsPanel">
@@ -89,8 +92,11 @@
       <div class="panel cert" id="certPanel">
         <h2>Certificate of fairness</h2>
         <div class="stamp" id="certStamp"></div>
-        <table id="certTable"></table>
-        <div class="zero">Guesses required: 0 · Bifurcations: 0</div>
+        <div class="zero">Guesses required: 0</div>
+        <details class="more-details">
+          <summary>See the full logic breakdown</summary>
+          <table id="certTable"></table>
+        </details>
       </div>
 
       <div class="panel qed" id="qedPanel">
@@ -104,7 +110,7 @@
     </div>
   </main>
 
-  <footer>Fair Sudoku generates each puzzle against a human-technique solver, not a brute-force one. A puzzle only ships if the solver completes it using nothing beyond your ceiling — the certificate above is the actual trace of that solve, not a marketing claim. <button type="button" class="linkish" id="howItWorks">How it works</button></footer>
+  <footer>Every Fair Sudoku puzzle is checked before you see it: it only ships if it can be solved, start to finish, with step-by-step logic at your level. The certificate above is that actual check — not a marketing claim. <button type="button" class="linkish" id="howItWorks">How it works</button></footer>
 </div>
 
 <div class="modal-scrim" id="onboardScrim" hidden>
@@ -124,8 +130,8 @@
     <div class="ob-slide" data-slide="2" hidden>
       <img class="ob-illo" src="icons/onboard-3.png" alt="" onerror="this.remove()">
       <div class="ob-eyebrow">On your terms</div>
-      <h2>Set your logic ceiling</h2>
-      <p>Choose how hard you’re willing to think — from <strong>Singles</strong> up to the full <strong>Expert</strong> toolkit — and pick a difficulty within it. Every puzzle is guaranteed to need nothing beyond your limit.</p>
+      <h2>Pick your level</h2>
+      <p>Choose how deep you want the logic to go — from <strong>Beginner</strong> to <strong>Expert</strong> — and a difficulty within it. Every puzzle is guaranteed to need nothing beyond your level.</p>
     </div>
     <div class="ob-dots" id="obDots" aria-hidden="true"></div>
     <div class="ob-actions">

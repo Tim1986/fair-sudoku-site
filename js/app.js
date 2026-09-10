@@ -272,15 +272,16 @@ function renderCert() {
   const table = document.getElementById("certTable");
   const counts = {}; certTrace.forEach(s => counts[s.tech] = (counts[s.tech] || 0) + 1);
   table.innerHTML = TECHS.filter(t => t.tier <= tier).map(t =>
-    `<tr><td>${t.name}</td><td>${counts[t.id] || 0}</td></tr>`).join("");
+    `<tr><td><span class="tt-name">${t.name}</span><span class="tt-plain">${t.plain}</span></td><td>${counts[t.id] || 0}</td></tr>`).join("");
   const L = LEVELS.find(L => L.id === tier);
   const band = difficultyBand(difficultyScore(certTrace), tier);
   document.getElementById("certStamp").textContent =
-    `Verified before you saw it: ${certTrace.length} logical steps · ceiling “${L.label}” · ${band} for this level.`;
+    `Verified before you saw it: ${certTrace.length} logical steps · ${band} for this level.`;
   document.getElementById("contractText").textContent =
-    `This puzzle is certified solvable with ${L.desc} — nothing harder. If you’re ever stuck, don’t guess: demand the proof.`;
+    `This puzzle is certified: solvable start to finish with ${L.plain} — no guessing, ever. Stuck? Ask for the proof.`;
   const list = document.getElementById("techList");
-  list.innerHTML = TECHS.map(t => `<li class="${t.tier <= tier ? "" : "off"}">${t.name}</li>`).join("");
+  list.innerHTML = TECHS.map(t =>
+    `<li class="${t.tier <= tier ? "" : "off"}"><span class="tt-name">${t.name}</span><span class="tt-plain">${t.plain}</span></li>`).join("");
   seg.querySelectorAll("button").forEach(b => b.classList.toggle("on", +b.dataset.id === tier));
   const chip = document.getElementById("modeChip");
   if (mode === "daily") { chip.textContent = `Daily #${dailyNumber()} · ${dailyDateStr()}`; chip.classList.remove("free"); }
@@ -308,7 +309,7 @@ function shareText() {
   const st = streaks();
   const lines = [
     `Fair Sudoku · Daily #${dailyNumber()}`,
-    `Ceiling: ${L.label}`,
+    `Level: ${L.label}`,
     `Solved by pure logic · ${proofsAsked === 0 ? "no proofs asked" : proofsAsked + " proof" + (proofsAsked > 1 ? "s" : "") + " asked"} · 0 guesses`,
   ];
   if (st.current >= 2) lines.push(`🔥 ${st.current}-day streak`);
@@ -350,7 +351,7 @@ async function makeShareCanvas() {
   const proofs = proofsAsked === 0 ? "no proofs asked" : `${proofsAsked} proof${proofsAsked > 1 ? "s" : ""} asked`;
   g.fillText(`0 guesses  ·  ${proofs}`, S / 2, 748);
   g.fillStyle = SOFT; g.font = "400 34px 'Instrument Sans', sans-serif";
-  g.fillText(`${L.label} ceiling  ·  ${band} for this level`, S / 2, 806);
+  g.fillText(`${L.label} level  ·  ${band}`, S / 2, 806);
 
   if (st.current >= 2) {
     g.fillStyle = CREAM; g.font = "600 44px 'Instrument Sans', sans-serif";
@@ -550,7 +551,7 @@ async function newPuzzle(nextMode) {
   renderCert(); render(); checkDone();
   const L = LEVELS.find(l => l.id === reqTier);
   const band = difficultyBand(difficultyScore(certTrace), reqTier);
-  announce(`${mode === "daily" ? "Daily puzzle" : "Practice puzzle"} loaded. ${L.label} ceiling, ${band} for this level.`);
+  announce(`${mode === "daily" ? "Daily puzzle" : "Practice puzzle"} loaded. ${L.label} level, ${band}.`);
 }
 document.getElementById("dailyBtn").addEventListener("click", () => newPuzzle("daily"));
 document.getElementById("newBtn").addEventListener("click", () => newPuzzle("free"));
