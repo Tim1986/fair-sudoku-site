@@ -254,7 +254,7 @@ function renderProof() {
   if (proof.stage >= 3) {
     const t = TECHS.find(t => t.id === pl.tech);
     learnTech(pl.tech); elims.forEach(st => learnTech(st.tech));
-    let html = `<div class="tech-name">${t.name}</div><div>${pl.why}</div>`;
+    let html = `<div class="tech-name">${t.name}${infoDot(t)}</div><div>${pl.why}</div>`;
     if (elims.length) {
       html += `<div style="margin-top:8px; color:var(--muted); font-size:.82rem;">First, ${elims.length} supporting elimination${elims.length > 1 ? "s" : ""}: ` +
         elims.map(st => `<em>${TECHS.find(x => x.id === st.tech).name.toLowerCase()}</em> removing ${st.digits.join(", ")} in ${st.cells.map(cellName).join(", ")}`).join("; ") + ".</div>";
@@ -268,11 +268,14 @@ function renderProof() {
 }
 
 /* ---------- certificate ---------- */
+function infoDot(t) {
+  return `<button class="info-dot" type="button" data-tech-info="${t.id}" aria-label="What is ${t.name}? See it on an example board">i</button>`;
+}
 function renderCert() {
   const table = document.getElementById("certTable");
   const counts = {}; certTrace.forEach(s => counts[s.tech] = (counts[s.tech] || 0) + 1);
   table.innerHTML = TECHS.filter(t => t.tier <= tier).map(t =>
-    `<tr><td><span class="tt-name">${t.name}</span><span class="tt-plain">${t.plain}</span></td><td>${counts[t.id] || 0}</td></tr>`).join("");
+    `<tr><td><span class="tt-name">${t.name}${infoDot(t)}</span><span class="tt-plain">${t.plain}</span></td><td>${counts[t.id] || 0}</td></tr>`).join("");
   const L = LEVELS.find(L => L.id === tier);
   const band = difficultyBand(difficultyScore(certTrace), tier);
   document.getElementById("certStamp").textContent =
@@ -281,7 +284,7 @@ function renderCert() {
     `This puzzle is certified: solvable start to finish with ${L.plain} — no guessing, ever. Stuck? Ask for the proof.`;
   const list = document.getElementById("techList");
   list.innerHTML = TECHS.map(t =>
-    `<li class="${t.tier <= tier ? "" : "off"}"><span class="tt-name">${t.name}</span><span class="tt-plain">${t.plain}</span></li>`).join("");
+    `<li class="${t.tier <= tier ? "" : "off"}"><span class="tt-name">${t.name}${infoDot(t)}</span><span class="tt-plain">${t.plain}</span></li>`).join("");
   seg.querySelectorAll("button").forEach(b => b.classList.toggle("on", +b.dataset.id === tier));
   const chip = document.getElementById("modeChip");
   if (mode === "daily") { chip.textContent = `Daily #${dailyNumber()} · ${dailyDateStr()}`; chip.classList.remove("free"); }
@@ -432,7 +435,7 @@ function renderTechMet() {
   const n = TECHS.filter(t => techsLearned.has(t.id)).length;
   const newest = [...techsLearned].map(id => TECHS.find(t => t.id === id)).filter(Boolean).slice(-1)[0];
   el.innerHTML = `<span class="tm-count">${n} of ${TECHS.length}</span> techniques met` +
-    (newest ? ` · latest: <strong>${newest.name}</strong>` : "");
+    (newest ? ` · latest: <strong>${newest.name}</strong>${infoDot(newest)}` : "");
 }
 
 /* ---------- stats & streaks ---------- */

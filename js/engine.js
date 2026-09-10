@@ -180,7 +180,7 @@ function findStep(board, cands, tier) {
           if (victims.length) {
             return { kind: "elim", tech: "XW", cells: victims, digits: [d], evidence,
               unit: evidence.slice(),
-              why: `${d} forms an X-Wing: in two ${orient}s it sits only in the same two ${orient === "row" ? "columns" : "rows"}. Those two ${orient === "row" ? "columns" : "rows"} must use their ${d} inside the rectangle, so ${d} can be removed from them elsewhere.` };
+              why: `${d} forms an X-Wing: in two ${orient === "row" ? "rows" : "columns"} it sits only in the same two ${orient === "row" ? "columns" : "rows"}. Those two ${orient === "row" ? "columns" : "rows"} must use their ${d} inside the rectangle, so ${d} can be removed from them elsewhere.` };
           }
         }
       }
@@ -269,7 +269,7 @@ function findStep(board, cands, tier) {
           const evidence = [];
           baseLines.forEach(lk => cols.forEach(ck => { const i = mk(lk, ck); if (cands[i] && cands[i].has(d)) evidence.push(i); }));
           return { kind: "elim", tech: "SF", cells: victims, digits: [d], evidence, unit: evidence.slice(),
-            why: `${d} forms a Swordfish: across three ${orient}s it is confined to the same three ${orient === "row" ? "columns" : "rows"}. Those ${orient === "row" ? "columns" : "rows"} must place their ${d} inside the pattern, so ${d} can be removed from them elsewhere.` };
+            why: `${d} forms a Swordfish: across three ${orient === "row" ? "rows" : "columns"} it is confined to the same three ${orient === "row" ? "columns" : "rows"}. Those ${orient === "row" ? "columns" : "rows"} must place their ${d} inside the pattern, so ${d} can be removed from them elsewhere.` };
         }
       }
     }
@@ -302,7 +302,7 @@ function findStep(board, cands, tier) {
         }
         if (victims.length) {
           return { kind: "elim", tech: "SK", cells: victims, digits: [d], evidence: [A[0], A[1], B[0], B[1]], unit: [A[0], A[1], B[0], B[1]],
-            why: `${d} forms a Skyscraper: two ${orient}s hold ${d} in only two cells each and share one ${orient === "row" ? "column" : "row"}. One of the two far cells must be ${d}, so any cell seeing both can’t be ${d}.` };
+            why: `${d} forms a Skyscraper: two ${orient === "row" ? "rows" : "columns"} hold ${d} in only two cells each and share one ${orient === "row" ? "column" : "row"}. One of the two far cells must be ${d}, so any cell seeing both can’t be ${d}.` };
         }
       }
     }

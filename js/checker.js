@@ -22,7 +22,7 @@ function tierRows(v) {
   if (!v.valid || !v.tiers) return "";
   return v.tiers.map(t => {
     const used = Object.entries(t.counts)
-      .map(([id, n]) => `${TECHS.find(x => x.id === id).name.toLowerCase()} ×${n}`).join(", ");
+      .map(([id, n]) => `<span class="tech-link" data-tech-info="${id}" title="What is this? Tap for an example">${TECHS.find(x => x.id === id).name.toLowerCase()}</span> ×${n}`).join(", ");
     return `<tr class="${t.solved ? "ok" : "fail"}">
       <td>${t.solved ? "✓" : "✗"}</td><td>${t.label}</td>
       <td>${t.solved ? `solves it — ${used}` : "stalls"}</td></tr>`;
